@@ -1,0 +1,27 @@
+name: mkmetrics
+version: 0.1.0
+github: "changsun20/mkmetrics"
+author: "changsun20"
+license: BSD-3-Clause
+
+extra-source-files:
+  - README.md
+  - CHANGELOG.md
+
+dependencies:
+  - base >=4.7 && <5
+
+ghc-options:
+  - -Wall
+  - -Wcompat
+  - -Widentities
+  - -Wincomplete-record-updates
+  - -Wincomplete-uni-patterns
+  - -Wmissing-export-lists
+  - -Wmissing-home-modules
+  - -Wpartial-fields
+  - -Wredundant-constraints
+
+executable:
+  main: Main.hs
+  source-dirs: src

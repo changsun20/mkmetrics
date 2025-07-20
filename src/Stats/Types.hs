@@ -2,7 +2,6 @@ module Stats.Types
   ( BasicStats(..)
   , MDStats(..)
   , FileStats(..)
-  , Config(..)
   ) where
 
 data BasicStats = BasicStats
@@ -22,8 +21,4 @@ data FileStats = FileStats
   { filePath :: FilePath
   , basic :: BasicStats
   , md :: MDStats
-  } deriving (Eq, Show)
-
-data Config = Config
-  { inputPath :: FilePath
   } deriving (Eq, Show)

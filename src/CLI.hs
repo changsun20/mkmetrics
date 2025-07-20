@@ -1,11 +1,19 @@
-module CLI (parseCLI) where
+module CLI (parseCLI, Config(..)) where
 
 import Options.Applicative
-import Stats.Types (Config(..))
+
+data Config = Config
+  { inputPath :: FilePath
+  } deriving (Eq, Show)
 
 parseCLI :: IO Config
-parseCLI = execParser $ info (configParser <**> helper)
+parseCLI = execParser $ info 
+  (configParser <**> versionOption <**> helper)
   (fullDesc <> progDesc "Markdown file statistics tool")
+
+versionOption :: Parser (a -> a)
+versionOption = infoOption "MkMetrics v0.1.0"
+  (short 'v' <> long "version" <> help "Show version information")
 
 configParser :: Parser Config
 configParser = Config

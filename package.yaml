@@ -10,8 +10,8 @@ extra-source-files:
 
 dependencies:
   - base >=4.7 && <5
-  - text >=2.1.2
-  - optparse-applicative >=0.16
+  - text >=2.1.1
+  - optparse-applicative >=0.18
 
 ghc-options:
   - -Wall

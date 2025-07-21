@@ -1,20 +1,14 @@
 module Stats.Core (processFile) where
 
-import Stats.Types (FileStats(FileStats))
+import qualified Data.Text.IO as TIO
 import Stats.Basic (computeBasicStats)
 import Stats.Markdown (computeMDStats)
-import Data.Text (Text, pack)
+import Stats.Types (FileStats (FileStats))
 import Prelude hiding (readFile)
-import System.IO (readFile)
 
 processFile :: FilePath -> IO FileStats
 processFile path = do
-  content <- readFileContent path
+  content <- TIO.readFile path
   let basicStats = computeBasicStats content
       mdStats = computeMDStats content
   return $ FileStats path basicStats mdStats
-
-readFileContent :: FilePath -> IO Text
-readFileContent path = do
-  content <- readFile path
-  return $ pack content

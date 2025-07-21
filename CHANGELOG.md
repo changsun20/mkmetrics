@@ -8,5 +8,11 @@ and this project adheres to the
 
 ## Unreleased
 
+### Added
+
+- CLI args for file path, version number and help message
+- Basic statistics for characters, words and lines
+- Print out the result in simple String format
+
 ## 0.1.0.0 - YYYY-MM-DD
 

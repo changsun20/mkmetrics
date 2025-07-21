@@ -1,8 +1,8 @@
 module Main (main) where
 
-import CLI (parseCLI, inputPath)
-import Stats.Core (processFile)
+import CLI (inputPath, parseCLI)
 import Output (printStats)
+import Stats.Core (processFile)
 
 main :: IO ()
 main = do

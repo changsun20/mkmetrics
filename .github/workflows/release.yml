@@ -88,8 +88,20 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y musl-tools
-          CC=musl-gcc stack build --resolver lts-23.27 --flag mkmetrics:static \
-            --ghc-options='-optl-static -optl-pthread -optc-fPIC' \
+
+          # Clean any existing build artifacts to force rebuild with musl
+          stack clean
+
+          # Set environment variables for musl
+          export CC=musl-gcc
+          export CXX=musl-g++
+          export STRIP=musl-strip
+
+          # Build with explicit musl configuration
+          stack build --resolver lts-23.27 --flag mkmetrics:static \
+            --ghc-options='-static -optl-static -optl-pthread -fPIC' \
+            --extra-lib-dirs=/usr/lib/x86_64-linux-musl \
+            --extra-include-dirs=/usr/include/x86_64-linux-musl \
             --copy-bins --local-bin-path ./dist
 
       - name: Build binary (Windows)

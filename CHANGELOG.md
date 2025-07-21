@@ -12,6 +12,7 @@ and this project adheres to the
 
 - CLI args for file path, version number and help message
 - Basic statistics for characters, words and lines
+- Markdown specific stats (headers, code blocks, links)
 - Print out the result in simple String format
 
 ## 0.1.0.0 - YYYY-MM-DD

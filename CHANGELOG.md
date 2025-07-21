@@ -10,11 +10,14 @@ and this project adheres to the
 
 ### Added
 
+## v0.1.0 - 2025-07-21
+
+### Added
+
 - CLI args for file path, version number and help message
 - Basic statistics for characters, words and lines
 - Markdown specific stats (headers, code blocks, links)
 - Print out the result in simple String format
 - Basic test suites
-
-## 0.1.0.0 - YYYY-MM-DD
+- GitHub CI/CD
 

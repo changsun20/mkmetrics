@@ -21,6 +21,11 @@ source-repository head
   type: git
   location: https://github.com/changsun20/mkmetrics
 
+flag static
+  description: Build static executable
+  manual: True
+  default: False
+
 library
   exposed-modules:
       CLI
@@ -52,13 +57,15 @@ executable mkmetrics
       Paths_mkmetrics
   hs-source-dirs:
       src
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
     , mkmetrics
     , optparse-applicative >=0.18
     , text >=2.1.1
   default-language: Haskell2010
+  if flag(static)
+    ghc-options: -static -optl-static -optl-pthread -optc-Os
 
 test-suite mkmetrics-test
   type: exitcode-stdio-1.0

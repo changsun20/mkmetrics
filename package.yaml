@@ -13,6 +13,12 @@ dependencies:
   - text >=2.1.1
   - optparse-applicative >=0.18
 
+flags:
+  static:
+    description: Build static executable
+    manual: true
+    default: false
+
 ghc-options:
   - -Wall
   - -Wcompat
@@ -40,6 +46,17 @@ executable:
   source-dirs: src
   dependencies:
     - mkmetrics
+  ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+  when:
+    - condition: flag(static)
+      ghc-options:
+        - -static
+        - -optl-static
+        - -optl-pthread
+        - -optc-Os
 
 tests:
   mkmetrics-test:

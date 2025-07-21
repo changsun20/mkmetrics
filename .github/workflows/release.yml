@@ -54,6 +54,7 @@ jobs:
           - os: ubuntu-latest
             asset_name: mkmetrics-linux-x86_64
             strip_cmd: strip
+            container: alpine:3.18
           - os: windows-latest
             asset_name: mkmetrics-windows-x86_64.exe
             strip_cmd: echo "No strip on Windows"
@@ -61,18 +62,57 @@ jobs:
             asset_name: mkmetrics-darwin-x86_64
             strip_cmd: strip
 
+    container: ${{ matrix.container }}
+
     steps:
+      - name: Install system dependencies (Alpine)
+        if: matrix.container == 'alpine:3.18'
+        run: |
+          apk add --no-cache \
+            curl gcc g++ gmp-dev ncurses-dev libffi-dev make xz gzip tar perl git bash sudo \
+            zlib zlib-dev zlib-static gmp gmp-dev ncurses-static musl-dev binutils-gold \
+            autoconf automake libtool pkgconfig
+
+      - name: Install GHCup (Alpine)
+        if: matrix.container == 'alpine:3.18'
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://downloads.haskell.org/~ghcup/x86_64-linux-ghcup > /usr/bin/ghcup
+          chmod +x /usr/bin/ghcup
+          export PATH="$HOME/.ghcup/bin:$PATH"
+          echo "$HOME/.ghcup/bin" >> $GITHUB_PATH
+
+      - name: Install GHC and Stack (Alpine)
+        if: matrix.container == 'alpine:3.18'
+        run: |
+          export PATH="$HOME/.ghcup/bin:$PATH"
+          ghcup install ghc --set 9.8.4
+          ghcup install stack --set latest
+
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Haskell Stack
+      - name: Setup Haskell Stack (Non-Alpine)
+        if: matrix.container != 'alpine:3.18'
         uses: haskell-actions/setup@v2
         with:
           ghc-version: "latest"
           enable-stack: true
           stack-version: "latest"
 
-      - name: Cache dependencies
+      - name: Cache dependencies (Alpine)
+        if: matrix.container == 'alpine:3.18'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.stack
+            .stack-work
+          key: alpine-stack-release-${{ hashFiles('**/*.cabal', 'stack.yaml', 'package.yaml') }}
+          restore-keys: |
+            alpine-stack-release-
+            alpine-stack-
+
+      - name: Cache dependencies (Non-Alpine)
+        if: matrix.container != 'alpine:3.18'
         uses: actions/cache@v4
         with:
           path: |
@@ -83,25 +123,15 @@ jobs:
             ${{ runner.os }}-stack-release-
             ${{ runner.os }}-stack-
 
-      - name: Build static binary (Linux)
-        if: matrix.os == 'ubuntu-latest'
+      - name: Build static binary (Alpine Linux)
+        if: matrix.container == 'alpine:3.18'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y musl-tools
+          export PATH="$HOME/.ghcup/bin:$PATH"
+          mkdir -p ./dist
 
-          # Clean any existing build artifacts to force rebuild with musl
-          stack clean
-
-          # Set environment variables for musl
-          export CC=musl-gcc
-          export CXX=musl-g++
-          export STRIP=musl-strip
-
-          # Build with explicit musl configuration
+          # Build with static linking options
           stack build --resolver lts-23.27 --flag mkmetrics:static \
-            --ghc-options='-static -optl-static -optl-pthread -fPIC' \
-            --extra-lib-dirs=/usr/lib/x86_64-linux-musl \
-            --extra-include-dirs=/usr/include/x86_64-linux-musl \
+            --ghc-options='-split-sections -optl-static -optl-pthread' \
             --copy-bins --local-bin-path ./dist
 
       - name: Build binary (Windows)
@@ -109,23 +139,50 @@ jobs:
         run: |
           stack build --resolver lts-23.27 --copy-bins --local-bin-path ./dist
 
-      - name: Build static binary (macOS)
+      - name: Build binary (macOS)
         if: matrix.os == 'macOS-latest'
         run: |
-          stack build --resolver lts-23.27 --ghc-options='-optl-static' --copy-bins --local-bin-path ./dist
+          stack build --resolver lts-23.27 --copy-bins --local-bin-path ./dist
 
       - name: Strip binary (Unix)
         if: matrix.os != 'windows-latest'
         run: |
-          ${{ matrix.strip_cmd }} ./dist/mkmetrics-exe
+          # Find the executable file (could be mkmetrics-exe or mkmetrics)
+          if [ -f ./dist/mkmetrics-exe ]; then
+            BINARY_PATH="./dist/mkmetrics-exe"
+          elif [ -f ./dist/mkmetrics ]; then
+            BINARY_PATH="./dist/mkmetrics"
+          else
+            echo "Binary not found in ./dist/"
+            ls -la ./dist/
+            exit 1
+          fi
+          ${{ matrix.strip_cmd }} "$BINARY_PATH"
 
       - name: Prepare release asset
         shell: bash
         run: |
+          # Find the executable file
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            cp ./dist/mkmetrics-exe.exe ./${{ matrix.asset_name }}
+            if [ -f ./dist/mkmetrics-exe.exe ]; then
+              cp ./dist/mkmetrics-exe.exe ./${{ matrix.asset_name }}
+            elif [ -f ./dist/mkmetrics.exe ]; then
+              cp ./dist/mkmetrics.exe ./${{ matrix.asset_name }}
+            else
+              echo "Windows binary not found"
+              ls -la ./dist/
+              exit 1
+            fi
           else
-            cp ./dist/mkmetrics-exe ./${{ matrix.asset_name }}
+            if [ -f ./dist/mkmetrics-exe ]; then
+              cp ./dist/mkmetrics-exe ./${{ matrix.asset_name }}
+            elif [ -f ./dist/mkmetrics ]; then
+              cp ./dist/mkmetrics ./${{ matrix.asset_name }}
+            else
+              echo "Unix binary not found"
+              ls -la ./dist/
+              exit 1
+            fi
           fi
 
       - name: Upload release asset

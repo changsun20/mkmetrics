@@ -10,7 +10,7 @@ and this project adheres to the
 
 ### Added
 
-## v0.1.0 - 2025-07-21
+## v0.1.1 - 2025-07-21
 
 ### Added
 

@@ -73,6 +73,11 @@ jobs:
             zlib zlib-dev zlib-static gmp gmp-dev ncurses-static musl-dev binutils-gold \
             autoconf automake libtool pkgconfig
 
+          # Fix ownership issues for GitHub Actions
+          chown -R $(whoami) /github/home || true
+          mkdir -p /github/home/.stack
+          chown -R $(whoami) /github/home/.stack || true
+
       - name: Install GHCup (Alpine)
         if: matrix.container == 'alpine:3.18'
         run: |
@@ -85,8 +90,17 @@ jobs:
         if: matrix.container == 'alpine:3.18'
         run: |
           export PATH="$HOME/.ghcup/bin:$PATH"
+
+          # Ensure proper ownership for ghcup directory
+          mkdir -p "$HOME/.ghcup"
+          chown -R $(whoami) "$HOME/.ghcup" || true
+
           ghcup install ghc --set 9.8.4
           ghcup install stack --set latest
+
+          # Verify installations
+          ghc --version
+          stack --version
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -127,6 +141,14 @@ jobs:
         if: matrix.container == 'alpine:3.18'
         run: |
           export PATH="$HOME/.ghcup/bin:$PATH"
+
+          # Ensure proper ownership and permissions
+          mkdir -p "$HOME/.stack"
+          chown -R $(whoami) "$HOME/.stack" || true
+
+          # Set stack root explicitly to avoid permission issues
+          export STACK_ROOT="$HOME/.stack"
+
           mkdir -p ./dist
 
           # Build with static linking options

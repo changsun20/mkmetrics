@@ -9,7 +9,7 @@ computeMDStats content =
   let lines' = T.lines content
       headerCount' = length $ filter isHeader lines'
       codeBlockCount' = length (filter isCodeBlock lines') `div` 2
-      linkCount' = length $ filter containsLink lines'
+      linkCount' = sum $ map countLinksInLine lines'
    in MDStats
         { headerCount = headerCount',
           codeBlockCount = codeBlockCount',
@@ -22,5 +22,8 @@ isHeader = T.isPrefixOf (T.pack "#")
 isCodeBlock :: Text -> Bool
 isCodeBlock = T.isPrefixOf (T.pack "```")
 
-containsLink :: Text -> Bool
-containsLink line = T.isInfixOf (T.pack "[") line && T.isInfixOf (T.pack "](") line
+countLinksInLine :: Text -> Int
+countLinksInLine line =
+  let linkPattern = T.pack "]("
+      parts = T.splitOn linkPattern line
+   in length parts - 1

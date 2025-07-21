@@ -14,6 +14,7 @@ and this project adheres to the
 - Basic statistics for characters, words and lines
 - Markdown specific stats (headers, code blocks, links)
 - Print out the result in simple String format
+- Basic test suites
 
 ## 0.1.0.0 - YYYY-MM-DD
 

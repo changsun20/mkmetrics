@@ -21,6 +21,23 @@ source-repository head
   type: git
   location: https://github.com/changsun20/mkmetrics
 
+library
+  exposed-modules:
+      CLI
+      Output
+      Stats.Basic
+      Stats.Core
+      Stats.Markdown
+      Stats.Types
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  build-depends:
+      base >=4.7 && <5
+    , optparse-applicative >=0.18
+    , text >=2.1.1
+  default-language: Haskell2010
+
 executable mkmetrics
   main-is: Main.hs
   other-modules:
@@ -38,6 +55,34 @@ executable mkmetrics
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       base >=4.7 && <5
+    , mkmetrics
     , optparse-applicative >=0.18
     , text >=2.1.1
+  default-language: Haskell2010
+
+test-suite mkmetrics-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      MainSpec
+      Stats.BasicSpec
+      Stats.CoreSpec
+      Stats.MarkdownSpec
+      Paths_mkmetrics
+  autogen-modules:
+      Paths_mkmetrics
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      QuickCheck
+    , base >=4.7 && <5
+    , directory
+    , filepath
+    , hspec >=2.7.1
+    , hspec-discover
+    , mkmetrics
+    , optparse-applicative >=0.18
+    , silently
+    , text
   default-language: Haskell2010

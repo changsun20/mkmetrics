@@ -24,7 +24,38 @@ ghc-options:
   - -Wpartial-fields
   - -Wredundant-constraints
 
+library:
+  source-dirs: src
+  exposed-modules:
+    - CLI
+    - Output
+    - Stats.Basic
+    - Stats.Core
+    - Stats.Markdown
+    - Stats.Types
+  other-modules: []
+
 executable:
   main: Main.hs
   source-dirs: src
+  dependencies:
+    - mkmetrics
+
+tests:
+  mkmetrics-test:
+    main: Spec.hs
+    source-dirs: test
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    dependencies:
+      - mkmetrics
+      - hspec >= 2.7.1
+      - QuickCheck
+      - hspec-discover
+      - text
+      - directory
+      - filepath
+      - silently
 

@@ -17,7 +17,7 @@ parseCLI =
 versionOption :: Parser (a -> a)
 versionOption =
   infoOption
-    "MkMetrics v0.1.0"
+    "MkMetrics v0.1.6"
     (short 'v' <> long "version" <> help "Show version information")
 
 configParser :: Parser Config

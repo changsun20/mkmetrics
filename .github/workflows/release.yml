@@ -54,7 +54,7 @@ jobs:
           - os: ubuntu-latest
             asset_name: mkmetrics-linux-x86_64
             strip_cmd: strip
-            container: alpine:3.18
+            container: alpine:3.22.1
           - os: windows-latest
             asset_name: mkmetrics-windows-x86_64.exe
             strip_cmd: echo "No strip on Windows"
@@ -69,12 +69,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install system dependencies (Alpine)
-        if: matrix.container == 'alpine:3.18'
+        if: matrix.container == 'alpine:3.22.1'
         run: |
           apk add --no-cache \
             curl gcc g++ gmp-dev ncurses-dev libffi-dev make xz gzip tar perl git bash sudo \
             zlib zlib-dev zlib-static gmp gmp-dev ncurses-static musl-dev binutils-gold \
-            autoconf automake libtool pkgconfig
+            autoconf automake libtool pkgconfig linux-headers
 
           # Fix ownership issues for GitHub Actions
           chown -R $(whoami) /github/home || true
@@ -84,8 +84,11 @@ jobs:
           # Fix ownership of the workspace directory (after checkout)
           chown -R $(whoami) /__w/mkmetrics/mkmetrics || true
 
+          # Set memory limits to avoid OOM issues during compilation
+          ulimit -s unlimited || true
+
       - name: Install GHCup (Alpine)
-        if: matrix.container == 'alpine:3.18'
+        if: matrix.container == 'alpine:3.22.1'
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://downloads.haskell.org/~ghcup/x86_64-linux-ghcup > /usr/bin/ghcup
           chmod +x /usr/bin/ghcup
@@ -93,7 +96,7 @@ jobs:
           echo "$HOME/.ghcup/bin" >> $GITHUB_PATH
 
       - name: Install GHC and Stack (Alpine)
-        if: matrix.container == 'alpine:3.18'
+        if: matrix.container == 'alpine:3.22.1'
         run: |
           export PATH="$HOME/.ghcup/bin:$PATH"
 
@@ -101,7 +104,8 @@ jobs:
           mkdir -p "$HOME/.ghcup"
           chown -R $(whoami) "$HOME/.ghcup" || true
 
-          ghcup install ghc --set 9.8.4
+          # Use more stable GHC version for Alpine
+          ghcup install ghc --set 9.6.6
           ghcup install stack --set latest
 
           # Verify installations
@@ -109,7 +113,7 @@ jobs:
           stack --version
 
       - name: Setup Haskell Stack (Non-Alpine)
-        if: matrix.container != 'alpine:3.18'
+        if: matrix.container != 'alpine:3.22.1'
         uses: haskell-actions/setup@v2
         with:
           ghc-version: "latest"
@@ -117,7 +121,7 @@ jobs:
           stack-version: "latest"
 
       - name: Cache dependencies (Alpine)
-        if: matrix.container == 'alpine:3.18'
+        if: matrix.container == 'alpine:3.22.1'
         uses: actions/cache@v4
         with:
           path: |
@@ -129,7 +133,7 @@ jobs:
             alpine-stack-
 
       - name: Cache dependencies (Non-Alpine)
-        if: matrix.container != 'alpine:3.18'
+        if: matrix.container != 'alpine:3.22.1'
         uses: actions/cache@v4
         with:
           path: |
@@ -141,7 +145,7 @@ jobs:
             ${{ runner.os }}-stack-
 
       - name: Build static binary (Alpine Linux)
-        if: matrix.container == 'alpine:3.18'
+        if: matrix.container == 'alpine:3.22.1'
         run: |
           export PATH="$HOME/.ghcup/bin:$PATH"
 
@@ -150,20 +154,33 @@ jobs:
 
           mkdir -p ./dist
 
-          # Build with static linking options - add --allow-different-user flag
-          stack build --resolver lts-23.27 --flag mkmetrics:static \
-            --ghc-options='-split-sections -optl-static -optl-pthread' \
-            --copy-bins --local-bin-path ./dist --allow-different-user
+          # Set memory limits and compilation options to avoid segfaults
+          ulimit -s unlimited || true
+
+          # Use more conservative build settings for musl environment
+          stack build --resolver lts-22.30 --flag mkmetrics:static \
+            --ghc-options='-optc-Os -optl-static -optl-pthread' \
+            --copy-bins --local-bin-path ./dist --allow-different-user \
+            --jobs=1 --no-haddock-deps --no-haddock
 
       - name: Build binary (Windows)
         if: matrix.os == 'windows-latest'
         run: |
-          stack build --resolver lts-23.27 --copy-bins --local-bin-path ./dist
+          mkdir -p ./dist
+          # On Windows, build with optimizations (static linking can be problematic)
+          stack build --resolver lts-23.27 \
+            --ghc-options="-O2" \
+            --copy-bins --local-bin-path ./dist
 
       - name: Build binary (macOS)
         if: matrix.os == 'macOS-latest'
         run: |
-          stack build --resolver lts-23.27 --copy-bins --local-bin-path ./dist
+          mkdir -p ./dist
+          # On macOS, static linking is not generally supported, so we build normally
+          # but with optimizations
+          stack build --resolver lts-23.27 \
+            --ghc-options="-O2" \
+            --copy-bins --local-bin-path ./dist
 
       - name: Strip binary (Unix)
         if: matrix.os != 'windows-latest'
